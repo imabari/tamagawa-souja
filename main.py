@@ -160,7 +160,7 @@ def make_station_figure(
     )
 
     # 基準水位の水平線
-    colors = ["blue", "yellow", "orange", "red"]
+    colors = ["red", "orange", "yellow", "blue"]
     for i, (level_name, level_value) in enumerate(levels.items()):
         fig.add_hline(
             y=level_value,
