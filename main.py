@@ -288,11 +288,11 @@ def make_dam_flow_figure(dam_records: pd.DataFrame) -> go.Figure:
 # ─────────────────────────────────────────
 def main() -> None:
     st.set_page_config(
-        page_title="蒼社川・玉川ダム モニター",
+        page_title="玉川ダム・蒼社川 モニター",
         page_icon="🌊",
         layout="wide",
     )
-    st.title("🌊 蒼社川・玉川ダム モニター")
+    st.title("🌊 玉川ダム・蒼社川 モニター")
 
     # ── サイドバー ────────────────────────
     with st.sidebar:
@@ -364,7 +364,7 @@ def main() -> None:
                     past_series  = latest_series[latest_series.index <= one_hour_ago]
                     if not past_series.empty:
                         hourly_diff = latest_value - past_series.iloc[-1]
-                        delta_text  = f"{hourly_diff:+.2f} {unit}（1時間前比）"
+                        delta_text  = f"{hourly_diff:+.2f} {unit}（前回比）"
                         delta_color = "normal"
                     else:
                         delta_text  = "（1時間前データなし）"
@@ -392,7 +392,7 @@ def main() -> None:
                     past_series  = latest_series[latest_series.index <= one_hour_ago]
                     if not past_series.empty:
                         hourly_diff = latest_value - past_series.iloc[-1]
-                        delta_text  = f"{hourly_diff:+.2f} m（1時間前比）"
+                        delta_text  = f"{hourly_diff:+.2f} m（前回比）"
                         delta_color = "normal"
                     else:
                         delta_text  = "（1時間前データなし）"
