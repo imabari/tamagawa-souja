@@ -190,11 +190,11 @@ def make_station_figure(
 # ─────────────────────────────────────────
 def main() -> None:
     st.set_page_config(
-        page_title="河川水位モニター",
+        page_title="蒼社川水位モニター",
         page_icon="🌊",
         layout="wide",
     )
-    st.title("🌊 河川水位モニター")
+    st.title("🌊 蒼社川水位モニター")
 
     # ── サイドバー ────────────────────────
     with st.sidebar:
