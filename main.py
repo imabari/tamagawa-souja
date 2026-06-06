@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-玉川ダム位 & 蒼社川水モニタリング Streamlit アプリ
+蒼社川水位 & 玉川ダム モニタリング Streamlit アプリ
 """
 
 import io
@@ -40,6 +40,10 @@ STATIONS = {
     "中通": {"ymax": 3},
 }
 
+
+STATION_CAMERAS: dict[str, str] = {
+    "片山": "https://www.pref.ehime.jp/kasen/Contents/Cam/index006.htm",
+}
 DAM_COLUMNS = {
     0: "日時",
     1: "貯水位",
@@ -364,7 +368,7 @@ def main() -> None:
                     past_series  = latest_series[latest_series.index <= one_hour_ago]
                     if not past_series.empty:
                         hourly_diff = latest_value - past_series.iloc[-1]
-                        delta_text  = f"{hourly_diff:+.2f} {unit}（前回比）"
+                        delta_text  = f"{hourly_diff:+.2f} {unit}（1時間前比）"
                         delta_color = "normal"
                     else:
                         delta_text  = "（1時間前データなし）"
@@ -392,7 +396,7 @@ def main() -> None:
                     past_series  = latest_series[latest_series.index <= one_hour_ago]
                     if not past_series.empty:
                         hourly_diff = latest_value - past_series.iloc[-1]
-                        delta_text  = f"{hourly_diff:+.2f} m（前回比）"
+                        delta_text  = f"{hourly_diff:+.2f} m（1時間前比）"
                         delta_color = "normal"
                     else:
                         delta_text  = "（1時間前データなし）"
@@ -403,6 +407,11 @@ def main() -> None:
                         delta=delta_text,
                         delta_color=delta_color,
                     )
+                    if station_name in STATION_CAMERAS:
+                        col.link_button(
+                            f"{station_name} カメラ📹",
+                            STATION_CAMERAS[station_name],
+                        )
         else:
             st.info("サイドバーから観測所を選択してください。")
 
@@ -441,6 +450,11 @@ def main() -> None:
                     station_name, STATIONS[station_name]["ymax"],
                 )
                 st.plotly_chart(fig, use_container_width=True)
+                if station_name in STATION_CAMERAS:
+                    st.link_button(
+                        f"{station_name} カメラ📹",
+                        STATION_CAMERAS[station_name],
+                    )
             with st.expander("📋 生データを表示（蒼社川）"):
                 st.dataframe(water_levels[selected_stations], use_container_width=True)
                 st.subheader("基準水位")
