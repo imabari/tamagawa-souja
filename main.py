@@ -236,19 +236,27 @@ def main() -> None:
 
     # ── サマリーカード ────────────────────
     if selected_stations:
-        cols = st.columns(len(selected_stations))
-        for col, station in zip(cols, selected_stations):
-            latest = df1[station].dropna()
-            if not latest.empty:
-                val = latest.iloc[-1]
-                ymax = STATIONS[station]["ymax"]
-                pct = val / ymax * 100
+        metric_cols = st.columns(len(selected_stations))
+        for col, station_name in zip(metric_cols, selected_stations):
+            latest_series = water_levels[station_name].dropna()
+            if not latest_series.empty:
+                latest_value = latest_series.iloc[-1]
+                one_hour_ago = latest_series.index[-1] - pd.Timedelta(hours=1)
+                past_series  = latest_series[latest_series.index <= one_hour_ago]
+                if not past_series.empty:
+                    hourly_diff  = latest_value - past_series.iloc[-1]
+                    delta_text   = f"{hourly_diff:+.2f} m（1時間前比）"
+                    delta_color  = "normal"
+                else:
+                    delta_text  = "（1時間前データなし）"
+                    delta_color = "off"
                 col.metric(
-                    label=station,
-                    value=f"{val:.2f} m",
-                    delta=f"/{ymax} m ({pct:.0f}%)",
+                    label=station_name,
+                    value=f"{latest_value:.2f} m",
+                    delta=delta_text,
+                    delta_color=delta_color,
                 )
-
+ 
         st.divider()
 
         # ── グラフ ─────────────────────────
