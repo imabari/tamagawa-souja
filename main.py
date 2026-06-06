@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-蒼社川水位 & 玉川ダム モニタリング Streamlit アプリ
+玉川ダム位 & 蒼社川水モニタリング Streamlit アプリ
 """
 
 import io
@@ -232,7 +232,7 @@ def make_station_figure(
 # グラフ生成：玉川ダム
 # ─────────────────────────────────────────
 def make_dam_figure(dam_records: pd.DataFrame, metric: str, y_label: str) -> go.Figure:
-    """ダム諸量の時系列グラフを返す。"""
+    """ダム諸量（単一指標）の時系列グラフを返す。"""
     metric_series = dam_records[metric].dropna()
 
     fig = go.Figure()
@@ -249,6 +249,32 @@ def make_dam_figure(dam_records: pd.DataFrame, metric: str, y_label: str) -> go.
         title=f"玉川ダム {metric}",
         xaxis_title="日時",
         yaxis_title=y_label,
+        hovermode="x unified",
+        height=350,
+    )
+    return fig
+
+
+def make_dam_flow_figure(dam_records: pd.DataFrame) -> go.Figure:
+    """流入量・放流量を重ねた比較グラフを返す。"""
+    fig = go.Figure()
+    for flow_name, color in [("流入量", "royalblue"), ("放流量", "tomato")]:
+        if flow_name not in dam_records.columns:
+            continue
+        flow_series = dam_records[flow_name].dropna()
+        fig.add_trace(
+            go.Scatter(
+                x=flow_series.index,
+                y=flow_series.values,
+                mode="lines+markers",
+                name=flow_name,
+                line=dict(width=2, color=color),
+            )
+        )
+    fig.update_layout(
+        title="玉川ダム 流入量・放流量",
+        xaxis_title="日時",
+        yaxis_title="流量 (m³/s)",
         hovermode="x unified",
         height=350,
     )
@@ -311,6 +337,59 @@ def main() -> None:
             dam_error = f"⚠️ 玉川ダム データ解析エラー：{e}"
 
     # ══════════════════════════════════════
+    # 玉川ダムセクション
+    # ══════════════════════════════════════
+    st.header("🏔️ 玉川ダム")
+
+    if dam_error:
+        st.error(dam_error)
+    else:
+        st.caption(f"取得日時：{dam_now.strftime('%Y-%m-%d %H:%M')} JST")
+
+        # サマリーカード
+        dam_metric_cols = st.columns(4)
+        dam_summary_metrics = [
+            ("貯水率",  "%"),
+            ("貯水位",  "m"),
+            ("流入量",  "m³/s"),
+            ("放流量",  "m³/s"),
+        ]
+        for col, (metric_name, unit) in zip(dam_metric_cols, dam_summary_metrics):
+            latest_series = dam_records[metric_name].dropna()
+            if not latest_series.empty:
+                latest_value = latest_series.iloc[-1]
+                one_hour_ago = latest_series.index[-1] - pd.Timedelta(hours=1)
+                past_series  = latest_series[latest_series.index <= one_hour_ago]
+                if not past_series.empty:
+                    hourly_diff = latest_value - past_series.iloc[-1]
+                    delta_text  = f"{hourly_diff:+.2f} {unit}（1時間前比）"
+                    delta_color = "normal"
+                else:
+                    delta_text  = "（1時間前データなし）"
+                    delta_color = "off"
+                col.metric(
+                    label=metric_name,
+                    value=f"{latest_value:.1f} {unit}",
+                    delta=delta_text,
+                    delta_color=delta_color,
+                )
+
+        st.divider()
+
+        # グラフ：貯水率・貯水位は単独、流入量・放流量は統合
+        for metric_name, y_label in [("貯水率", "貯水率 (%)"), ("貯水位", "貯水位 (m)")]:
+            if metric_name in dam_records.columns:
+                st.plotly_chart(
+                    make_dam_figure(dam_records, metric_name, y_label),
+                    use_container_width=True,
+                )
+        st.plotly_chart(make_dam_flow_figure(dam_records), use_container_width=True)
+
+        # 生データ
+        with st.expander("📋 生データを表示（玉川ダム）"):
+            st.dataframe(dam_records, use_container_width=True)
+
+    # ══════════════════════════════════════
     # 蒼社川セクション
     # ══════════════════════════════════════
     st.header("🏞️ 蒼社川 水位")
@@ -363,62 +442,6 @@ def main() -> None:
                 st.dataframe(alert_thresholds[selected_stations], use_container_width=True)
         else:
             st.info("サイドバーから観測所を選択してください。")
-
-    # ══════════════════════════════════════
-    # 玉川ダムセクション
-    # ══════════════════════════════════════
-    st.header("🏔️ 玉川ダム")
-
-    if dam_error:
-        st.error(dam_error)
-    else:
-        st.caption(f"取得日時：{dam_now.strftime('%Y-%m-%d %H:%M')} JST")
-
-        # サマリーカード
-        dam_metric_cols = st.columns(4)
-        dam_summary_metrics = [
-            ("貯水率",  "%"),
-            ("貯水位",  "m"),
-            ("流入量",  "m³/s"),
-            ("放流量",  "m³/s"),
-        ]
-        for col, (metric_name, unit) in zip(dam_metric_cols, dam_summary_metrics):
-            latest_series = dam_records[metric_name].dropna()
-            if not latest_series.empty:
-                latest_value = latest_series.iloc[-1]
-                one_hour_ago = latest_series.index[-1] - pd.Timedelta(hours=1)
-                past_series  = latest_series[latest_series.index <= one_hour_ago]
-                if not past_series.empty:
-                    hourly_diff = latest_value - past_series.iloc[-1]
-                    delta_text  = f"{hourly_diff:+.2f} {unit}（1時間前比）"
-                    delta_color = "normal"
-                else:
-                    delta_text  = "（1時間前データなし）"
-                    delta_color = "off"
-                col.metric(
-                    label=metric_name,
-                    value=f"{latest_value:.1f} {unit}",
-                    delta=delta_text,
-                    delta_color=delta_color,
-                )
-
-        st.divider()
-
-        # グラフ
-        dam_chart_metrics = [
-            ("貯水率",  "貯水率 (%)"),
-            ("貯水位",  "貯水位 (m)"),
-            ("流入量",  "流量 (m³/s)"),
-            ("放流量",  "流量 (m³/s)"),
-        ]
-        for metric_name, y_label in dam_chart_metrics:
-            if metric_name in dam_records.columns:
-                fig = make_dam_figure(dam_records, metric_name, y_label)
-                st.plotly_chart(fig, use_container_width=True)
-
-        # 生データ
-        with st.expander("📋 生データを表示（玉川ダム）"):
-            st.dataframe(dam_records, use_container_width=True)
 
 
 if __name__ == "__main__":
