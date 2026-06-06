@@ -31,8 +31,8 @@ MAX_RETRIES     = 3
 BACKOFF_FACTOR  = 0.5
 
 STATIONS = {
-    "片山": {"ymax": 3},
-    "高野": {"ymax": 5},
+    "片山": {"ymax": 4},
+    "高野": {"ymax": 4},
     "中通": {"ymax": 3},
 }
 
