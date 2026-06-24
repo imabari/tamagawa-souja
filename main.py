@@ -42,7 +42,7 @@ STATIONS = {
 
 
 STATION_CAMERAS: dict[str, str] = {
-    "片山": "https://www.pref.ehime.jp/kasen/Contents/Cam/index006.htm",
+    "河川": "https://www.pref.ehime.jp/kasen/Contents/AreaCam/index002.htm",
 }
 DAM_COLUMNS = {
     0: "日時",
